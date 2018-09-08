@@ -15,7 +15,8 @@ import com.amap.api.location.AMapLocation;
 import com.amap.api.location.AMapLocationClient;
 import com.amap.api.location.AMapLocationClientOption;
 import com.amap.api.location.AMapLocationListener;
-import com.study.onedx.qweather.util.HttpUtil;
+import com.study.onedx.qweather.gson.realTime.RealTimeWeather;
+import com.study.onedx.qweather.utils.HttpUtil;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -26,9 +27,7 @@ import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity {
 
-    private final static int INTERNET_REQUEST_CODE = 1;
-    private final static int ACCESS_COARSE_LOCATION_REQUEST_CODE = 2;
-    private final static int ACCESS_FINE_LOCATION_REQUEST_CODE = 3;
+    private final static int ACCESS_COARSE_LOCATION_REQUEST_CODE = 1;
 
     private final static String CAIYUN_KEY = "qgxSWjkH1b03Ttdp";
 
@@ -52,40 +51,28 @@ public class MainActivity extends AppCompatActivity {
 
         messageText = findViewById(R.id.message_text);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.INTERNET)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.INTERNET},
-                    INTERNET_REQUEST_CODE);
-        }
+        //必须获取定位权限才能获取天气信息
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
                     ACCESS_COARSE_LOCATION_REQUEST_CODE);
+        } else {
+            //获取当前地点
+            getLocation();
         }
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this,
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                    ACCESS_FINE_LOCATION_REQUEST_CODE);
-        }
-
-
-        //获取当前地点
-        getLocation();
-
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         //super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode){
-            case INTERNET_REQUEST_CODE:
-                break;
             case ACCESS_COARSE_LOCATION_REQUEST_CODE:
-                break;
-            case ACCESS_FINE_LOCATION_REQUEST_CODE:
+                if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
+                    getLocation();
+                } else {
+                    Toast.makeText(MainActivity.this, "获取定位权限失败", Toast.LENGTH_SHORT).show();
+                }
                 break;
         }
     }
@@ -107,7 +94,8 @@ public class MainActivity extends AppCompatActivity {
         //设置setOnceLocationLatest(boolean b)接口为true，
         // 启动定位时SDK会返回最近3s内精度最高的一次定位结果。
         // 如果设置其为true，setOnceLocation(boolean b)接口也会被设置为true，反之不会，默认为false。
-        mLocationOption.setOnceLocationLatest(true);
+        mLocationOption.setOnceLocation(true);
+        //mLocationOption.setOnceLocationLatest(true);
         //给定位客户端对象设置定位参数
         mLocationClient.setLocationOption(mLocationOption);
         //启动定位
@@ -122,10 +110,7 @@ public class MainActivity extends AppCompatActivity {
         public void onLocationChanged(AMapLocation aMapLocation) {
             if (aMapLocation != null) {
                 if (aMapLocation.getErrorCode() == 0) {
-                    //解析aMapLocation获取相应内容。
-                    //纬度范围-90~90，经度范围-180~180
-                    //aMapLocation.getLatitude();//获取纬度
-                    //aMapLocation.getLongitude();//获取经度
+                    //解析aMapLocation获取相应内容。纬度范围-90~90，经度范围-180~180
                     //格式化参数：保留四位小数
                     lat = new DecimalFormat("0.0000").format(aMapLocation.getLatitude());
                     lon = new DecimalFormat("0.0000").format(aMapLocation.getLongitude());
@@ -136,14 +121,13 @@ public class MainActivity extends AppCompatActivity {
                             + aMapLocation.getErrorInfo());
                 }
             }
-            //展示天气信息
             getWeatherInfo();
         }
     };
 
     private void getWeatherInfo(){
         if(lat == null || lon == null){
-            Toast.makeText(MainActivity.this, "can't get location", Toast.LENGTH_SHORT).show();
+            Toast.makeText(MainActivity.this, "获取位置信息失败", Toast.LENGTH_SHORT).show();
             return;
         }
         String url = "https://api.caiyunapp.com/v2/" + CAIYUN_KEY + "/" +
@@ -154,7 +138,8 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(MainActivity.this, "get failure", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(MainActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+                        //todo 执行刷新
                     }
                 });
             }
@@ -162,10 +147,11 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 final String responseText = response.body().string();
+                final RealTimeWeather realTimeWeather = HttpUtil.handleRealTimeResponse(responseText);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        messageText.setText(responseText);
+                        showWeatherInfo(realTimeWeather);
                     }
                 });
             }
@@ -173,8 +159,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    private void showWeatherInfo(String Weather){
-
+    private void showWeatherInfo(RealTimeWeather realTimeWeather){
+        //todo 展示天气信息
+        messageText.setText("" + realTimeWeather.result.precipitation.local.intensity);
     }
 
 
