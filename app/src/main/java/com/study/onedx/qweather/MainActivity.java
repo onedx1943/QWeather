@@ -135,6 +135,9 @@ public class MainActivity extends AppCompatActivity {
         }
     };
 
+    /**
+     * 获取实时天气情况
+     */
     private void getWeatherInfo(){
         if(lat == null || lon == null){
             Toast.makeText(MainActivity.this, "获取位置信息失败", Toast.LENGTH_SHORT).show();
@@ -142,10 +145,6 @@ public class MainActivity extends AppCompatActivity {
         }
         String url = "https://api.caiyunapp.com/v2/" + CAIYUN_KEY + "/" +
                 lon + "," + lat + "/realtime.json";
-
-        //"https://api.caiyunapp.com/v2/TAkhjf8d1nlSlspN/121.6544,25.1552/forecast.json"
-//        String url = "https://api.caiyunapp.com/v2/" + CAIYUN_KEY + "/" +
-//                lon + "," + lat + "/forecast.json";
         HttpUtil.sendOkHttpRequest(url, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -175,6 +174,9 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * 获取未来48小时预报
+     */
     private void getForecastInfo(){
         String url = "https://api.caiyunapp.com/v2/" + CAIYUN_KEY + "/" +
                 lon + "," + lat + "/forecast.json";
@@ -197,7 +199,7 @@ public class MainActivity extends AppCompatActivity {
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        messageText.setText(responseText);
+                        //messageText.setText(responseText);
                     }
                 });
             }
@@ -258,10 +260,9 @@ public class MainActivity extends AppCompatActivity {
             return "中度污染";
         } else if( 250 >= pm25){
             return "重度污染";
-        } else if( pm25 >250){
+        } else {
             return "严重污染";
         }
-        return "未知";
     }
 
 }

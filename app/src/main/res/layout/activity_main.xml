@@ -28,14 +28,15 @@
             android:layout_alignParentRight="true"
             android:layout_marginEnd="10dp"
             android:layout_marginRight="10dp"
-            android:text="19:30" />
+            android:text="更新时间：19:30" />
 
     </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/real_time_weather"
         android:layout_width="match_parent"
-        android:layout_height="200dp"
+        android:layout_height="0dp"
+        android:layout_weight="2"
         android:gravity="center"
         android:orientation="vertical">
 
@@ -52,7 +53,7 @@
             android:id="@+id/sky_con"
             android:layout_width="wrap_content"
             android:layout_height="0dp"
-            android:gravity="bottom"
+            android:gravity="center"
             android:text="晴"
             android:layout_weight="1"/>
 
@@ -60,26 +61,28 @@
             android:id="@+id/real_time_pm25"
             android:layout_width="wrap_content"
             android:layout_height="0dp"
-            android:gravity="bottom"
-            android:text="晴"
+            android:gravity="center"
+            android:text="空气优 28"
             android:layout_weight="1"/>
 
     </LinearLayout>
 
-
-
-
-
-
-
-
-
-
-
-
     <TextView
         android:id="@+id/message_text"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="123"/>
+
+    <view class="android.support.v7.app.AlertController$RecycleListView"
+        android:id="@+id/forecast_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
+
+    <TextView
+        android:id="@+id/about"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="数据来源：彩云天气    位置来源：高德地图"/>
 
 </LinearLayout>
