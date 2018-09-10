@@ -20,6 +20,7 @@ import com.study.onedx.qweather.utils.HttpUtil;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
 
 import okhttp3.Call;
 import okhttp3.Callback;
@@ -32,7 +33,11 @@ public class MainActivity extends AppCompatActivity {
     private final static String CAIYUN_KEY = "qgxSWjkH1b03Ttdp";
 
     private TextView messageText;
-
+    private TextView location;
+    private TextView refreshTime;
+    private TextView temperature;
+    private TextView skyCon;
+    private TextView realTimePm25;
 
     //声明AMapLocationClient类对象
     public AMapLocationClient mLocationClient = null;
@@ -50,6 +55,11 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         messageText = findViewById(R.id.message_text);
+        location = findViewById(R.id.location);
+        refreshTime = findViewById(R.id.refresh_time);
+        temperature = findViewById(R.id.temperature);
+        skyCon = findViewById(R.id.sky_con);
+        realTimePm25 = findViewById(R.id.real_time_pm25);
 
         //必须获取定位权限才能获取天气信息
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
@@ -132,6 +142,10 @@ public class MainActivity extends AppCompatActivity {
         }
         String url = "https://api.caiyunapp.com/v2/" + CAIYUN_KEY + "/" +
                 lon + "," + lat + "/realtime.json";
+
+        //"https://api.caiyunapp.com/v2/TAkhjf8d1nlSlspN/121.6544,25.1552/forecast.json"
+//        String url = "https://api.caiyunapp.com/v2/" + CAIYUN_KEY + "/" +
+//                lon + "," + lat + "/forecast.json";
         HttpUtil.sendOkHttpRequest(url, new Callback() {
             @Override
             public void onFailure(Call call, IOException e) {
@@ -147,23 +161,107 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 final String responseText = response.body().string();
+
                 final RealTimeWeather realTimeWeather = HttpUtil.handleRealTimeResponse(responseText);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        messageText.setText(responseText);
                         showWeatherInfo(realTimeWeather);
+                    }
+                });
+                getForecastInfo();
+            }
+        });
+    }
+
+    private void getForecastInfo(){
+        String url = "https://api.caiyunapp.com/v2/" + CAIYUN_KEY + "/" +
+                lon + "," + lat + "/forecast.json";
+        HttpUtil.sendOkHttpRequest(url, new Callback() {
+            @Override
+            public void onFailure(Call call, IOException e) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Toast.makeText(MainActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
+                        //todo 执行刷新
+                    }
+                });
+            }
+
+            @Override
+            public void onResponse(Call call, Response response) throws IOException {
+                final String responseText = response.body().string();
+
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        messageText.setText(responseText);
                     }
                 });
             }
         });
     }
 
-
+    /**
+     * 展示天气信息
+     * @param realTimeWeather
+     */
     private void showWeatherInfo(RealTimeWeather realTimeWeather){
         //todo 展示天气信息
-        messageText.setText("" + realTimeWeather.result.precipitation.local.intensity);
+
+        location.setText("南京市");
+        SimpleDateFormat sdf = new SimpleDateFormat("HH:mm");
+        String realTime = "更新时间：" + sdf.format(realTimeWeather.server_time * 1000);
+        refreshTime.setText(realTime);
+        String realTimeTemperature = String.valueOf(Math.round(realTimeWeather.result.temperature)) + "°";
+        temperature.setText(realTimeTemperature);
+        String realStatus = getSkyCon(realTimeWeather.result.skycon);
+        skyCon.setText(realStatus);
+        String pm25 = "空气" + getPM25(realTimeWeather.result.pm25) + " " + realTimeWeather.result.pm25;
+        realTimePm25.setText(pm25);
+
     }
 
+    private String getSkyCon(String skyCon){
+        if("CLEAR_DAY".equals(skyCon)){
+            return "晴天";
+        } else if("CLEAR_NIGHT".equals(skyCon)){
+            return "晴夜";
+        } else if("PARTLY_CLOUDY_DAY".equals(skyCon)){
+            return "多云";
+        } else if("PARTLY_CLOUDY_NIGHT".equals(skyCon)){
+            return "多云";
+        } else if("CLOUDY".equals(skyCon)){
+            return "阴";
+        } else if("RAIN".equals(skyCon)){
+            return "雨";
+        } else if("SNOW".equals(skyCon)){
+            return "雪";
+        } else if("WIND".equals(skyCon)){
+            return "风";
+        } else if("HAZE".equals(skyCon)){
+            return "雾霾沙尘";
+        }
+        return "未知";
+    }
 
+    private String getPM25(int pm25){
+        if(0 <= pm25 && pm25 <= 35){
+            return "优";
+        } else if( pm25 <=75){
+            return "良";
+        } else if( 115 >= pm25){
+            return "轻度污染";
+        } else if( 150 >= pm25){
+            return "中度污染";
+        } else if( 250 >= pm25){
+            return "重度污染";
+        } else if( pm25 >250){
+            return "严重污染";
+        }
+        return "未知";
+    }
 
 }
