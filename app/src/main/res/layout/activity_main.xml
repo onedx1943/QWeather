@@ -5,84 +5,25 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".MainActivity">
+    tools:context=".MainActivity" >
 
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="5dp">
+    <!--<ScrollView-->
+        <!--android:id="@+id/weather_layout"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="match_parent"-->
+        <!--android:scrollbars="none"-->
+        <!--android:overScrollMode="never">-->
 
-        <TextView
-            android:id="@+id/location"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:layout_marginLeft="10dp"
-            android:text="南京市"/>
+        <!--<LinearLayout-->
+            <!--android:orientation="vertical"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="match_parent"-->
+            <!--android:fitsSystemWindows="true" >-->
 
-        <TextView
-            android:id="@+id/refresh_time"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_alignParentEnd="true"
-            android:layout_alignParentRight="true"
-            android:layout_marginEnd="10dp"
-            android:layout_marginRight="10dp"
-            android:text="更新时间：19:30" />
+            <include layout="@layout/weather" />
 
-    </RelativeLayout>
+        <!--</LinearLayout>-->
 
-    <LinearLayout
-        android:id="@+id/real_time_weather"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="2"
-        android:gravity="center"
-        android:orientation="vertical">
-
-        <TextView
-            android:id="@+id/temperature"
-            android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:gravity="bottom"
-            android:textSize="60sp"
-            android:text="23℃"
-            android:layout_weight="8"/>
-
-        <TextView
-            android:id="@+id/sky_con"
-            android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:gravity="center"
-            android:text="晴"
-            android:layout_weight="1"/>
-
-        <TextView
-            android:id="@+id/real_time_pm25"
-            android:layout_width="wrap_content"
-            android:layout_height="0dp"
-            android:gravity="center"
-            android:text="空气优 28"
-            android:layout_weight="1"/>
-
-    </LinearLayout>
-
-    <TextView
-        android:id="@+id/message_text"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="123"/>
-
-    <view class="android.support.v7.app.AlertController$RecycleListView"
-        android:id="@+id/forecast_layout"
-        android:layout_width="wrap_content"
-        android:layout_height="0dp"
-        android:layout_weight="1"/>
-
-    <TextView
-        android:id="@+id/about"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="数据来源：彩云天气    位置来源：高德地图"/>
+    <!--</ScrollView>-->
 
 </LinearLayout>
