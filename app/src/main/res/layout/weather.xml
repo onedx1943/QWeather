@@ -4,7 +4,7 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:background="@color/colorPrimary"
+    android:background="#6000"
     android:fitsSystemWindows="true" >
 
     <RelativeLayout
@@ -45,7 +45,7 @@
 
         <TextView
             android:layout_width="wrap_content"
-            android:layout_height="100dp" />
+            android:layout_height="200dp" />
 
         <TextView
             android:id="@+id/temperature"

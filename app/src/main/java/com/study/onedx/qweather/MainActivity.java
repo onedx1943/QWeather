@@ -7,6 +7,7 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
@@ -14,7 +15,6 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
@@ -24,6 +24,7 @@ import com.amap.api.location.AMapLocation;
 import com.amap.api.location.AMapLocationClient;
 import com.amap.api.location.AMapLocationClientOption;
 import com.amap.api.location.AMapLocationListener;
+import com.bumptech.glide.Glide;
 import com.study.onedx.qweather.bean.DayForecast;
 import com.study.onedx.qweather.bean.HourForecast;
 import com.study.onedx.qweather.gson.forecast.Daily;
@@ -47,37 +48,34 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements SwipeRefreshLayout.OnRefreshListener {
 
     private final static int ACCESS_COARSE_LOCATION_REQUEST_CODE = 1;
     private final static String CAIYUN_KEY = "qgxSWjkH1b03Ttdp";
 
     private RelativeLayout weatherLayout;
-
-    private TextView messageText;
+    private SwipeRefreshLayout swipeRefresh;
     private TextView location;
     private TextView refreshTime;
     private TextView temperature;
     private TextView skyCon;
     private TextView realTimePm25;
-
     private ListView mDailyForecastList;
     private RecyclerView mHourlyForecastList;
-
-    private DailyForecastAdapter dailyForecastAdapter;
-    private HourlyForecastAdapter hourlyForecastAdapter;
+    private ImageView imageBackground;
 
     private List<DayForecast> dayForecastList = new ArrayList<>();
     private List<HourForecast> hourForecastList = new ArrayList<>();
-
+    private DailyForecastAdapter dailyForecastAdapter;
+    private HourlyForecastAdapter hourlyForecastAdapter;
     //声明AMapLocationClient类对象
     public AMapLocationClient mLocationClient = null;
     //声明AMapLocationClientOption对象
     public AMapLocationClientOption mLocationOption = null;
-
     private String lon = null;//经度
     private String lat = null;//纬度
-    private String address;
+    private String address;//地址
+    private HourForecast now;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,14 +87,17 @@ public class MainActivity extends AppCompatActivity {
             getWindow().setStatusBarColor(Color.TRANSPARENT);
         }
         setContentView(R.layout.activity_main);
+        imageBackground = findViewById(R.id.image_background);
+        Glide.with(this).load(R.drawable.load).into(imageBackground);
         weatherLayout = findViewById(R.id.layout_weather);
         weatherLayout.setVisibility(View.INVISIBLE);
-        //messageText = findViewById(R.id.message_text);
         location = findViewById(R.id.location);
         refreshTime = findViewById(R.id.refresh_time);
         temperature = findViewById(R.id.temperature);
         skyCon = findViewById(R.id.sky_con);
         realTimePm25 = findViewById(R.id.real_time_pm25);
+        swipeRefresh = findViewById(R.id.swipe_refresh);
+        swipeRefresh.setColorSchemeResources(R.color.colorPrimary);
         mDailyForecastList = findViewById(R.id.lv_forecast_day);
         mHourlyForecastList = findViewById(R.id.rec_forecast_hour);
         dailyForecastAdapter = new DailyForecastAdapter(MainActivity.this, R.layout.item_forecast_daily, dayForecastList);
@@ -106,8 +107,10 @@ public class MainActivity extends AppCompatActivity {
         mHourlyForecastList.setLayoutManager(layoutManager);
         hourlyForecastAdapter= new HourlyForecastAdapter(hourForecastList);
         mHourlyForecastList.setAdapter(hourlyForecastAdapter);
-
+        //获取位置信息并加载天气数据
         obtainLocation();
+        //设置刷新
+        swipeRefresh.setOnRefreshListener(this);
     }
 
     /**
@@ -124,6 +127,11 @@ public class MainActivity extends AppCompatActivity {
             //获取当前地点
             getLocation();
         }
+    }
+
+    @Override
+    public void onRefresh() {
+        obtainLocation();
     }
 
     @Override
@@ -212,7 +220,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         Toast.makeText(MainActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
-                        //todo 执行刷新
+                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }
@@ -247,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void run() {
                         Toast.makeText(MainActivity.this, "获取天气信息失败", Toast.LENGTH_SHORT).show();
-                        //todo 执行刷新
+                        swipeRefresh.setRefreshing(false);
                     }
                 });
             }
@@ -263,6 +271,7 @@ public class MainActivity extends AppCompatActivity {
                         showForecast(forecastWeather);
                     }
                 });
+                swipeRefresh.setRefreshing(false);
             }
         });
     }
@@ -284,12 +293,10 @@ public class MainActivity extends AppCompatActivity {
         String pm25 = "空气" + getPM25(realTimeWeather.result.pm25) + " " + realTimeWeather.result.pm25;
         realTimePm25.setText(pm25);
 
-        hourForecastList.clear();
-        HourForecast now = new HourForecast();
+        now = new HourForecast();
         now.setTime("现在");
         now.setSkyInfo(realStatus);
         now.setTemperature(String.valueOf(Math.round(realTimeWeather.result.temperature)));
-        hourForecastList.add(now);
     }
 
     /**
@@ -311,13 +318,13 @@ public class MainActivity extends AppCompatActivity {
                 dayForecastList.add(dayForecast);
             }
             dailyForecastAdapter.notifyDataSetChanged();
-            mDailyForecastList.getHeight();
-            mDailyForecastList.getLayoutParams();
             Utility.setListViewHeightBasedOnChildren(mDailyForecastList);
         }
         Hourly hourly = forecastWeather.result.hourly;
         if("ok".equals(hourly.status)){
             //未来24小时天气预报
+            hourForecastList.clear();
+            hourForecastList.add(now);
             for(int i = 0; i < 24; i++){
                 HourForecast hourForecast = new HourForecast();
                 hourForecast.setTime(dateToHour(hourly.skyconList.get(i).datetime));
@@ -327,7 +334,7 @@ public class MainActivity extends AppCompatActivity {
             }
             hourlyForecastAdapter.notifyDataSetChanged();
         }
-
+        Glide.with(this).load(R.drawable.bg).into(imageBackground);
         weatherLayout.setVisibility(View.VISIBLE);
     }
 
@@ -390,7 +397,7 @@ public class MainActivity extends AppCompatActivity {
         SimpleDateFormat sDateFormat=new SimpleDateFormat("yyyy-MM-dd", Locale.US);
         SimpleDateFormat sDateFormat1=new SimpleDateFormat("MM月dd日", Locale.US);
         Calendar cal = Calendar.getInstance(); // 获得一个日历
-        Date date = null;
+        Date date;
         String date1 = null;
         try {
             date = sDateFormat.parse(strDate);
@@ -414,8 +421,7 @@ public class MainActivity extends AppCompatActivity {
     private String dateToHour(String strDate){
         SimpleDateFormat sDateFormat=new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US);
         SimpleDateFormat sDateFormat1=new SimpleDateFormat("HH", Locale.US);
-        Calendar cal = Calendar.getInstance(); // 获得一个日历
-        Date date = null;
+        Date date;
         String date1 = null;
         try {
             date = sDateFormat.parse(strDate);
@@ -423,10 +429,7 @@ public class MainActivity extends AppCompatActivity {
         } catch (ParseException e) {
             e.printStackTrace();
         }
-        int w = cal.get(Calendar.DAY_OF_WEEK) - 1; // 指示一个星期中的某天。
-        if (w < 0){
-            w = 0;
-        }
         return date1 + "时";
     }
+
 }
