@@ -9,10 +9,14 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ListView;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -21,10 +25,13 @@ import com.amap.api.location.AMapLocationClient;
 import com.amap.api.location.AMapLocationClientOption;
 import com.amap.api.location.AMapLocationListener;
 import com.study.onedx.qweather.bean.DayForecast;
+import com.study.onedx.qweather.bean.HourForecast;
 import com.study.onedx.qweather.gson.forecast.Daily;
 import com.study.onedx.qweather.gson.forecast.ForecastWeather;
+import com.study.onedx.qweather.gson.forecast.Hourly;
 import com.study.onedx.qweather.gson.realTime.RealTimeWeather;
 import com.study.onedx.qweather.utils.HttpUtil;
+import com.study.onedx.qweather.utils.Utility;
 
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -45,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
     private final static int ACCESS_COARSE_LOCATION_REQUEST_CODE = 1;
     private final static String CAIYUN_KEY = "qgxSWjkH1b03Ttdp";
 
-    private LinearLayout weatherLayout;
+    private RelativeLayout weatherLayout;
 
     private TextView messageText;
     private TextView location;
@@ -55,10 +62,13 @@ public class MainActivity extends AppCompatActivity {
     private TextView realTimePm25;
 
     private ListView mDailyForecastList;
+    private RecyclerView mHourlyForecastList;
 
     private DailyForecastAdapter dailyForecastAdapter;
+    private HourlyForecastAdapter hourlyForecastAdapter;
 
     private List<DayForecast> dayForecastList = new ArrayList<>();
+    private List<HourForecast> hourForecastList = new ArrayList<>();
 
     //声明AMapLocationClient类对象
     public AMapLocationClient mLocationClient = null;
@@ -67,6 +77,7 @@ public class MainActivity extends AppCompatActivity {
 
     private String lon = null;//经度
     private String lat = null;//纬度
+    private String address;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,10 +97,15 @@ public class MainActivity extends AppCompatActivity {
         temperature = findViewById(R.id.temperature);
         skyCon = findViewById(R.id.sky_con);
         realTimePm25 = findViewById(R.id.real_time_pm25);
-
         mDailyForecastList = findViewById(R.id.lv_forecast_day);
+        mHourlyForecastList = findViewById(R.id.rec_forecast_hour);
         dailyForecastAdapter = new DailyForecastAdapter(MainActivity.this, R.layout.item_forecast_daily, dayForecastList);
         mDailyForecastList.setAdapter(dailyForecastAdapter);
+        LinearLayoutManager layoutManager = new LinearLayoutManager(this);
+        layoutManager.setOrientation(LinearLayoutManager.HORIZONTAL);
+        mHourlyForecastList.setLayoutManager(layoutManager);
+        hourlyForecastAdapter= new HourlyForecastAdapter(hourForecastList);
+        mHourlyForecastList.setAdapter(hourlyForecastAdapter);
 
         obtainLocation();
     }
@@ -139,7 +155,7 @@ public class MainActivity extends AppCompatActivity {
         //true表示使用定位缓存策略；false表示不使用。
         mLocationOption.setLocationCacheEnable(false);
         //true表示定位返回经纬度同时返回地址描述（定位类型是网络定位的会返回）；false表示不返回地址描述。
-        mLocationOption.setNeedAddress(false);
+        mLocationOption.setNeedAddress(true);
         //获取最近3s内精度最高的一次定位结果：
         //设置setOnceLocationLatest(boolean b)接口为true，
         // 启动定位时SDK会返回最近3s内精度最高的一次定位结果。
@@ -159,11 +175,15 @@ public class MainActivity extends AppCompatActivity {
         @Override
         public void onLocationChanged(AMapLocation aMapLocation) {
             if (aMapLocation != null) {
-                if (aMapLocation.getErrorCode() == 0) {
+                if (aMapLocation.getErrorCode() == 0 && aMapLocation.getDistrict() != null) {
                     //解析aMapLocation获取相应内容。纬度范围-90~90，经度范围-180~180
                     //格式化参数：保留四位小数
                     lat = new DecimalFormat("0.0000").format(aMapLocation.getLatitude());
                     lon = new DecimalFormat("0.0000").format(aMapLocation.getLongitude());
+                    //aMapLocation.getProvince();//省
+                    //aMapLocation.getCity();//市
+                    address = aMapLocation.getDistrict();//区
+
                 }else {
                     //定位失败时，可通过ErrCode（错误码）信息来确定失败的原因，errInfo是错误信息，详见错误码表。
                     Log.e("AmapError","location Error, ErrCode:"
@@ -201,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
             public void onResponse(Call call, Response response) throws IOException {
                 final String responseText = response.body().string();
 
-                final RealTimeWeather realTimeWeather = HttpUtil.handleRealTimeResponse(responseText);
+                final RealTimeWeather realTimeWeather = Utility.handleRealTimeResponse(responseText);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -235,7 +255,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponse(Call call, Response response) throws IOException {
                 final String responseText = response.body().string();
-                final ForecastWeather forecastWeather = HttpUtil.handleForecastResponse(responseText);
+                final ForecastWeather forecastWeather = Utility.handleForecastResponse(responseText);
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
@@ -253,7 +273,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private void showWeatherInfo(RealTimeWeather realTimeWeather){
         //todo 展示天气信息
-        location.setText("南京市");
+        location.setText(address);
         SimpleDateFormat sdf = new SimpleDateFormat("HH:mm", Locale.US);
         String realTime = "更新时间：" + sdf.format(realTimeWeather.server_time * 1000);
         refreshTime.setText(realTime);
@@ -264,6 +284,12 @@ public class MainActivity extends AppCompatActivity {
         String pm25 = "空气" + getPM25(realTimeWeather.result.pm25) + " " + realTimeWeather.result.pm25;
         realTimePm25.setText(pm25);
 
+        hourForecastList.clear();
+        HourForecast now = new HourForecast();
+        now.setTime("现在");
+        now.setSkyInfo(realStatus);
+        now.setTemperature(String.valueOf(Math.round(realTimeWeather.result.temperature)));
+        hourForecastList.add(now);
     }
 
     /**
@@ -273,20 +299,35 @@ public class MainActivity extends AppCompatActivity {
     private void showForecast(ForecastWeather forecastWeather){
         //todo 展示天气预报
         Daily daily = forecastWeather.result.daily;
-        String dailyStatus = daily.status;//天气信息状态
-        if("ok".equals(dailyStatus)){
+        if("ok".equals(daily.status)){
             dayForecastList.clear();
             //未来五天天气预报
             for (int i = 0; i < 5; i++){
                 DayForecast dayForecast = new DayForecast();
                 dayForecast.setDate(dateToWeek(daily.skyconList.get(i).date));
                 dayForecast.setSkyInfo(getSkyCon(daily.skyconList.get(i).value));
-                dayForecast.setMaxTemp(daily.temperatureList.get(i).max);
-                dayForecast.setMinTemp(daily.temperatureList.get(i).min);
+                dayForecast.setMaxTemp(String.valueOf(Math.round(Double.parseDouble(daily.temperatureList.get(i).max))));
+                dayForecast.setMinTemp(String.valueOf(Math.round(Double.parseDouble(daily.temperatureList.get(i).min))));
                 dayForecastList.add(dayForecast);
             }
             dailyForecastAdapter.notifyDataSetChanged();
+            mDailyForecastList.getHeight();
+            mDailyForecastList.getLayoutParams();
+            Utility.setListViewHeightBasedOnChildren(mDailyForecastList);
         }
+        Hourly hourly = forecastWeather.result.hourly;
+        if("ok".equals(hourly.status)){
+            //未来24小时天气预报
+            for(int i = 0; i < 24; i++){
+                HourForecast hourForecast = new HourForecast();
+                hourForecast.setTime(dateToHour(hourly.skyconList.get(i).datetime));
+                hourForecast.setSkyInfo(getSkyCon(hourly.skyconList.get(i).value));
+                hourForecast.setTemperature(String.valueOf(Math.round(Double.parseDouble(hourly.temperatureList.get(i).value))));
+                hourForecastList.add(hourForecast);
+            }
+            hourlyForecastAdapter.notifyDataSetChanged();
+        }
+
         weatherLayout.setVisibility(View.VISIBLE);
     }
 
@@ -363,5 +404,29 @@ public class MainActivity extends AppCompatActivity {
             w = 0;
         }
         return weekDays[w] + " (" + date1 + ")";
+    }
+
+    /**
+     * 将字符串日期转换为小时
+     * @param strDate 日期
+     * @return 时
+     */
+    private String dateToHour(String strDate){
+        SimpleDateFormat sDateFormat=new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.US);
+        SimpleDateFormat sDateFormat1=new SimpleDateFormat("HH", Locale.US);
+        Calendar cal = Calendar.getInstance(); // 获得一个日历
+        Date date = null;
+        String date1 = null;
+        try {
+            date = sDateFormat.parse(strDate);
+            date1 = sDateFormat1.format(date);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        int w = cal.get(Calendar.DAY_OF_WEEK) - 1; // 指示一个星期中的某天。
+        if (w < 0){
+            w = 0;
+        }
+        return date1 + "时";
     }
 }

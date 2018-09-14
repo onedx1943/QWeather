@@ -1,13 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/layout_weather"
     android:orientation="vertical"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:background="@color/colorPrimary"
     android:fitsSystemWindows="true" >
 
     <RelativeLayout
+        android:id="@+id/relative_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="5dp">
@@ -18,8 +19,7 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="10dp"
             android:layout_marginLeft="10dp"
-            android:textColor="#fff"
-            android:text="南京市"/>
+            android:textColor="#fff" />
 
         <TextView
             android:id="@+id/refresh_time"
@@ -29,66 +29,88 @@
             android:layout_alignParentRight="true"
             android:layout_marginEnd="10dp"
             android:layout_marginRight="10dp"
-            android:textColor="#fff"
-            android:text="更新时间：19:30" />
+            android:textColor="#fff" />
 
     </RelativeLayout>
 
     <LinearLayout
         android:id="@+id/real_time_weather"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="2"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/relative_title"
         android:gravity="center"
         android:orientation="vertical">
+
         <TextView
             android:layout_width="wrap_content"
-            android:layout_height="200dp" />
+            android:layout_height="100dp" />
+
         <TextView
             android:id="@+id/temperature"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="bottom"
-            android:textSize="60sp"
-            android:text="23℃"
-            android:textColor="#fff" />
+            android:textColor="#fff"
+            android:textSize="60sp" />
 
         <TextView
             android:id="@+id/sky_con"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="晴"
             android:textColor="#fff" />
 
         <TextView
             android:id="@+id/real_time_pm25"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:gravity="center"
             android:layout_marginBottom="20dp"
-            android:text="空气优 28"
+            android:gravity="center"
             android:textColor="#fff" />
 
     </LinearLayout>
 
-    <ListView
-        android:id="@+id/lv_forecast_day"
-        android:layout_width="match_parent"
-        android:layout_height="90dp" />
-
-    <android.support.v7.widget.RecyclerView
+    <RelativeLayout
+        android:id="@+id/forecast_weather_hourly"
         android:layout_width="wrap_content"
-        android:layout_height="50dp" >
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="20dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/real_time_weather"
+        android:descendantFocusability="blocksDescendants">
 
-    </android.support.v7.widget.RecyclerView>
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/rec_forecast_hour"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/forecast_weather_daily"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/forecast_weather_hourly">
+        <ListView
+            android:id="@+id/lv_forecast_day"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+    </RelativeLayout>
 
     <TextView
         android:id="@+id/about"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/forecast_weather_daily"
         android:gravity="center"
-        android:textColor="#fff"
-        android:text="数据来源：彩云天气    位置来源：高德地图"/>
+        android:text="@string/data_sources"
+        android:textColor="#fff" />
 
-</LinearLayout>
+</RelativeLayout>

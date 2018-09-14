@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">QWeather</string>
+    <string name="data_sources">数据来源：彩云天气    位置来源：高德地图</string>
 </resources>
